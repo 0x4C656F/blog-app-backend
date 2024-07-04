@@ -1,5 +1,5 @@
-pub mod users_service;
-pub use users_service::UsersService;
+mod users_service;
+pub use users_service::*;
 
 #[derive(sqlx::FromRow, juniper::GraphQLObject, Debug)]
 pub struct User {

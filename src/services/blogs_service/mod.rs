@@ -1,4 +1,7 @@
-pub mod blogs_service;
+
+mod blogs_service;
+pub use blogs_service::*;
+
 #[derive(sqlx::FromRow, juniper::GraphQLObject, Debug)]
 pub struct Blog {
     pub id: Option<i32>,

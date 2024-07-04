@@ -1,12 +1,13 @@
 use juniper::{ graphql_value, FieldError, FieldResult };
 use crate::graphql::Context;
-use super::{ Blog, CreateBlogDto };
+use super::{ Blog, CreateBlogDto,  };
 
 pub trait IBlogsService {
     async fn blogs(context: &Context) -> FieldResult<Vec<Blog>>;
     async fn blogs_by_user_id(user_id: i32, context: &Context) -> FieldResult<Vec<Blog>>;
     async fn create_blog(create_blog_dto: CreateBlogDto, context: &Context) -> FieldResult<Blog>;
     async fn publish_blog(blog_id: i32, context: &Context) -> FieldResult<bool>;
+    async fn blog(blog_id: i32, context: &Context) -> FieldResult<Blog>;
 }
 
 pub struct BlogsService {}
@@ -70,5 +71,11 @@ impl IBlogsService for BlogsService {
         } else {
             Err(FieldError::new("Failed to publish blog", graphql_value!({ "id": blog_id })))
         }
+    }
+
+    async fn blog(blog_id: i32, context: &Context) -> FieldResult<Blog>{
+        sqlx::query_as::<_,Blog>("SELECT * FROM blogs WHERE id = $1").bind(blog_id).fetch_one(&context.db).await.map_err(|_|{
+            FieldError::new("No such blog", graphql_value!({"id":blog_id}))
+        })
     }
 }
