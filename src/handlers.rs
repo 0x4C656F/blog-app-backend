@@ -1,14 +1,13 @@
-use actix_web::{ get, web, Error, HttpMessage, HttpRequest, HttpResponse, Responder };
+use crate::graphql::{create_schema, Context, Schema};
+use actix_web::{get, web, Error, HttpRequest, HttpResponse, Responder};
 use actix_web_lab::respond::Html;
-use juniper::http::{ graphiql::graphiql_source, GraphQLRequest };
-
-use crate::graphql::{ create_schema, Context, Schema };
-use jsonwebtoken::{decode, DecodingKey, Validation, errors::Error as JwtError};
-
+use dotenvy::var;
+use jsonwebtoken::{decode, errors::Error as JwtError, DecodingKey, Validation};
+use juniper::http::{graphiql::graphiql_source, GraphQLRequest};
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
-struct Claims {
-    sub: String, // subject (user id)
-    exp: usize, // expiration time
+pub struct Claims {
+    pub sub: i32,
+    pub exp: u64,
 }
 pub enum AuthRequirement {
     Required,
@@ -24,16 +23,16 @@ fn extract_token(req: &HttpRequest) -> Option<&str> {
 }
 
 fn validate_token(token: &str) -> Result<Claims, JwtError> {
-    // In a real application, you should store this secret securely (e.g., in environment variables)
-    let secret = b"your_secret_key";
+    let secret = var("JWT_SECRET").unwrap();
+    println!("Secret: {:?}", &secret);
     let validation = Validation::default();
-    
+
     let token_data = decode::<Claims>(
         token,
-        &DecodingKey::from_secret(secret),
-        &validation
+        &DecodingKey::from_secret(secret.as_bytes()),
+        &validation,
     )?;
-    
+
     Ok(token_data.claims)
 }
 async fn graphql_handler(
@@ -44,19 +43,18 @@ async fn graphql_handler(
     auth_requirement: AuthRequirement,
 ) -> Result<HttpResponse, Error> {
     let user_id: Option<i32> = match auth_requirement {
+        // TODO - remove the unwraps and think of smthing better
         AuthRequirement::Required => {
-            let token = extract_token(&req).ok_or_else(|| {
-                HttpResponse::Unauthorized().finish()
-            })?;
-            
-            let claims = validate_token(token).map_err(|_| {
-                HttpResponse::Unauthorized().finish()
-            })?;
-            
-            Some(claims.sub.parse().map_err(|_| {
-                HttpResponse::InternalServerError().finish()
-            })?)
-        },
+            let token = extract_token(&req)
+                .ok_or_else(|| HttpResponse::Unauthorized().finish())
+                .unwrap();
+
+            let claims = validate_token(token)
+                .map_err(|_| return HttpResponse::Unauthorized().finish())
+                .unwrap();
+
+            Some(claims.sub)
+        }
         AuthRequirement::None => None,
     };
 
@@ -72,11 +70,21 @@ async fn graphql_playground() -> impl Responder {
     Html(graphiql_source("/graphql", None))
 }
 
-async fn graphql_public(schema: web::Data<Schema>, context: web::Data<Context>, data: web::Json<GraphQLRequest>, req: HttpRequest) -> Result<HttpResponse, Error> {
+async fn graphql_public(
+    schema: web::Data<Schema>,
+    context: web::Data<Context>,
+    data: web::Json<GraphQLRequest>,
+    req: HttpRequest,
+) -> Result<HttpResponse, Error> {
     graphql_handler(schema, context, data, req, AuthRequirement::None).await
 }
 
-async fn graphql_protected(schema: web::Data<Schema>, context: web::Data<Context>, data: web::Json<GraphQLRequest>, req: HttpRequest) -> Result<HttpResponse, Error> {
+async fn graphql_protected(
+    schema: web::Data<Schema>,
+    context: web::Data<Context>,
+    data: web::Json<GraphQLRequest>,
+    req: HttpRequest,
+) -> Result<HttpResponse, Error> {
     graphql_handler(schema, context, data, req, AuthRequirement::Required).await
 }
 
@@ -84,6 +92,6 @@ pub fn register(config: &mut web::ServiceConfig) {
     config
         .app_data(web::Data::new(create_schema()))
         .service(web::resource("/graphql/public").route(web::post().to(graphql_public)))
-        .service(web::resource("/graphql/protected").route(web::post().to(graphql_protected)))        
+        .service(web::resource("/graphql/protected").route(web::post().to(graphql_protected)))
         .service(graphql_playground);
 }
