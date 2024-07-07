@@ -1,6 +1,6 @@
 mod auth_service;
 pub use auth_service::*;
-#[derive(Debug, juniper::GraphQLObject)]
+#[derive(Debug, juniper::GraphQLObject, Clone)]
 pub struct TokenPair {
     pub access_token: String,
     pub refresh_token: String,

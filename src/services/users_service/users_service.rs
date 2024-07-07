@@ -1,7 +1,7 @@
-use juniper::FieldResult;
+use super::{CreateUserDto, User};
+use crate::error::ToFieldError;
 use crate::graphql::Context;
-use super::{ CreateUserDto, User };
-
+use juniper::FieldResult;
 pub trait IUsersService {
     async fn find_all(context: &Context) -> FieldResult<Vec<User>>;
     async fn find(id: i32, context: &Context) -> FieldResult<User>;
@@ -14,27 +14,27 @@ pub struct UsersService {}
 impl IUsersService for UsersService {
     async fn find_all(context: &Context) -> FieldResult<Vec<User>> {
         sqlx::query_as::<_, User>("SELECT * FROM users")
-            .fetch_all(&context.db).await
-            .map_err(|e| {
-                println!("{:?}", e);
-                juniper::FieldError::new("Failed to fetch users", juniper::Value::Null)
-            })
+            .fetch_all(&context.db)
+            .await
+            .to_field_error("Failed to fetch users")
     }
 
     async fn find(id: i32, context: &Context) -> FieldResult<User> {
         sqlx::query_as::<_, User>("SELECT * FROM users WHERE id = $1")
             .bind(id)
-            .fetch_one(&context.db).await
+            .fetch_one(&context.db)
+            .await
             .map_err(|e| {
                 println!("{:?}", e);
                 juniper::FieldError::new("No such user", juniper::Value::Null)
             })
     }
 
-    async fn find_by_email(email:String,context:&Context) -> FieldResult<User>{
+    async fn find_by_email(email: String, context: &Context) -> FieldResult<User> {
         sqlx::query_as::<_, User>("SELECT * FROM users WHERE email = $1")
             .bind(email)
-            .fetch_one(&context.db).await
+            .fetch_one(&context.db)
+            .await
             .map_err(|e| {
                 println!("{:?}", e);
                 juniper::FieldError::new("No such user", juniper::Value::Null)
@@ -64,4 +64,3 @@ impl IUsersService for UsersService {
             })
     }
 }
-

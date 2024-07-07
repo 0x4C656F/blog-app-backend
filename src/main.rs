@@ -7,12 +7,12 @@ use graphql::Context;
 use handlers::register;
 use std::io;
 mod db;
+mod error;
 mod graphql;
 mod graphql_protected;
 mod graphql_public;
 mod handlers;
 mod services;
-
 #[actix_web::main]
 async fn main() -> Result<(), io::Error> {
     let connection = establish_connection().await.unwrap();
