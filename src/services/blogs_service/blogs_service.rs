@@ -1,7 +1,7 @@
 use juniper::{ graphql_value, FieldError, FieldResult };
 use crate::graphql::Context;
-use super::{ Blog, CreateBlogDto,  };
-
+use super::{ Blog, CreateBlogDto };
+use crate::error::ToFieldError;
 pub trait IBlogsService {
     async fn blogs(context: &Context) -> FieldResult<Vec<Blog>>;
     async fn blogs_by_user_id(user_id: i32, context: &Context) -> FieldResult<Vec<Blog>>;
@@ -15,20 +15,14 @@ impl IBlogsService for BlogsService {
     async fn blogs(context: &Context) -> FieldResult<Vec<Blog>> {
         sqlx::query_as::<_, Blog>("SELECT * FROM blogs")
             .fetch_all(&context.db).await
-            .map_err(|e| {
-                println!("{:?}", e);
-                FieldError::new("Failed to fetch blogs", juniper::Value::Null)
-            })
+            .to_field_error("Failed to fetch blogs")
     }
 
     async fn blogs_by_user_id(user_id: i32, context: &Context) -> FieldResult<Vec<Blog>> {
         sqlx::query_as::<_, Blog>("SELECT * FROM blogs WHERE user_id = $1")
             .bind(user_id)
             .fetch_all(&context.db).await
-            .map_err(|e| {
-                println!("{:?}", e);
-                FieldError::new("Failed to fetch blogs", juniper::Value::Null)
-            })
+            .to_field_error("Failed to fetch blogs")
     }
 
     async fn create_blog(create_blog_dto: CreateBlogDto, context: &Context) -> FieldResult<Blog> {
@@ -52,10 +46,7 @@ impl IBlogsService for BlogsService {
             .bind(&blog.created_at)
             .bind(&blog.updated_at)
             .fetch_one(&context.db).await
-            .map_err(|e| {
-                println!("{:?}", e);
-                FieldError::new("Failed to create blog", juniper::Value::Null)
-            })
+            .to_field_error("Failed to create blog")
     }
 
     async fn publish_blog(blog_id: i32, context: &Context) -> FieldResult<bool> {
@@ -73,9 +64,10 @@ impl IBlogsService for BlogsService {
         }
     }
 
-    async fn blog(blog_id: i32, context: &Context) -> FieldResult<Blog>{
-        sqlx::query_as::<_,Blog>("SELECT * FROM blogs WHERE id = $1").bind(blog_id).fetch_one(&context.db).await.map_err(|_|{
-            FieldError::new("No such blog", graphql_value!({"id":blog_id}))
-        })
+    async fn blog(blog_id: i32, context: &Context) -> FieldResult<Blog> {
+        sqlx::query_as::<_, Blog>("SELECT * FROM blogs WHERE id = $1")
+            .bind(blog_id)
+            .fetch_one(&context.db).await
+            .to_field_error("No such blog")
     }
 }

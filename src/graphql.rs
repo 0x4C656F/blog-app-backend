@@ -1,4 +1,3 @@
-
 use juniper::graphql_object;
 use juniper::EmptySubscription;
 use juniper::FieldResult;
@@ -10,7 +9,7 @@ use crate::graphql_public::PublicQuery;
 #[derive(Clone)]
 pub struct Context {
     pub db: PgPool,
-    pub user_id: Option<i32>,        
+    pub user_id: Option<i32>,
 }
 
 impl juniper::Context for Context {}
@@ -26,12 +25,8 @@ impl Query {
     fn protected() -> FieldResult<ProtectedQuery> {
         Ok(ProtectedQuery)
     }
-
-
 }
 pub struct Mutation;
-
-
 
 #[graphql_object(context = Context)]
 impl Mutation {
@@ -42,14 +37,10 @@ impl Mutation {
     fn protected() -> FieldResult<ProtectedMutation> {
         Ok(ProtectedMutation)
     }
-
-
 }
 
-pub type Schema = juniper::RootNode<'static, Query, Mutation, EmptySubscription<Context>>;
+// pub type Schema = juniper::RootNode<'static, Query, Mutation, EmptySubscription<Context>>;
 
-pub fn create_schema() -> Schema {
-    Schema::new(Query, Mutation, EmptySubscription::new())
-}
-
-
+// pub fn create_schema() -> Schema {
+//     Schema::new(Query, Mutation, EmptySubscription::new())
+// }

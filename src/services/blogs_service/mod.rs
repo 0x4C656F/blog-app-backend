@@ -1,8 +1,7 @@
-
 mod blogs_service;
 pub use blogs_service::*;
 
-#[derive(sqlx::FromRow, juniper::GraphQLObject, Debug)]
+#[derive(sqlx::FromRow, juniper::GraphQLObject, Debug, Clone)]
 pub struct Blog {
     pub id: Option<i32>,
     pub title: String,

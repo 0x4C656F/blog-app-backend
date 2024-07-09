@@ -1,19 +1,15 @@
-use juniper::{graphql_object, FieldResult};
+use juniper::{ graphql_object, FieldResult };
 
 use crate::graphql::Context;
 use crate::services::blogs_service::*;
 use crate::services::users_service::*;
 
-
 pub struct ProtectedQuery;
 pub struct ProtectedMutation;
 
-
-
-
 #[graphql_object(context = Context)]
 impl ProtectedQuery {
-        async fn blogs(context: &Context) -> FieldResult<Vec<Blog>> {
+    async fn blogs(context: &Context) -> FieldResult<Vec<Blog>> {
         BlogsService::blogs(context).await
     }
 
@@ -29,22 +25,33 @@ impl ProtectedQuery {
         UsersService::find(id, context).await
     }
 
-    async fn blog(id:i32,context:&Context) -> FieldResult<Blog>{
-        BlogsService::blog(id,context).await
+    async fn blog(id: i32, context: &Context) -> FieldResult<Blog> {
+        BlogsService::blog(id, context).await
     }
 }
 
 #[juniper::graphql_object(context = Context)]
 impl ProtectedMutation {
     async fn create_user(create_user_dto: CreateUserDto, context: &Context) -> FieldResult<User> {
-                UsersService::create_user(create_user_dto, context).await
-            }
-        
-            async fn create_blog(create_blog_dto: CreateBlogDto, context: &Context) -> FieldResult<Blog> {
-                BlogsService::create_blog(create_blog_dto, context).await
-            }
-        
-            async fn publish_blog(blog_id: i32, context: &Context) -> FieldResult<bool> {
-                BlogsService::publish_blog(blog_id, context).await
-            }
+        UsersService::create_user(create_user_dto, context).await
+    }
+
+    async fn create_blog(create_blog_dto: CreateBlogDto, context: &Context) -> FieldResult<Blog> {
+        BlogsService::create_blog(create_blog_dto, context).await
+    }
+
+    async fn publish_blog(blog_id: i32, context: &Context) -> FieldResult<bool> {
+        BlogsService::publish_blog(blog_id, context).await
+    }
+}
+
+pub type ProtectedSchema = juniper::RootNode<
+    'static,
+    ProtectedQuery,
+    ProtectedMutation,
+    juniper::EmptySubscription<Context>
+>;
+
+pub fn create_protected_schema() -> ProtectedSchema {
+    ProtectedSchema::new(ProtectedQuery, ProtectedMutation, juniper::EmptySubscription::new())
 }
