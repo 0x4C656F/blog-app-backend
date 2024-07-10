@@ -23,8 +23,10 @@ async fn main() -> Result<(), io::Error> {
     };
 
     HttpServer::new(move || {
+        let cors = actix_cors::Cors::permissive();
         App::new()
             .wrap(Logger::default())
+            .wrap(cors)
             .app_data(Data::new(context.clone()))
             .configure(register)
     })

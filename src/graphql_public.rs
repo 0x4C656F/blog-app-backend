@@ -1,17 +1,22 @@
-use juniper::{ graphql_object, FieldResult };
+use juniper::{ graphql_object, FieldResult, GraphQLObject };
 
 use crate::{
     graphql::Context,
     services::auth_service::{ AuthService, IAuthService, LoginDto, RegisterDto, TokenPair },
 };
 
+#[derive(GraphQLObject)]
+struct MockObject {
+    field: String,
+}
+
 pub struct PublicMutation;
 pub struct PublicQuery;
 
 #[graphql_object(context = Context)]
 impl PublicQuery {
-    async fn _dummy(context: &Context) -> FieldResult<bool> {
-        Ok(true)
+    async fn dummy(_context: &Context) -> FieldResult<MockObject> {
+        Ok(MockObject { field: "dummy".to_string() })
     }
 }
 #[graphql_object(context = Context)]
@@ -22,15 +27,4 @@ impl PublicMutation {
     async fn register(register_dto: RegisterDto, context: &Context) -> FieldResult<TokenPair> {
         AuthService::register(register_dto, context).await
     }
-}
-
-pub type PublicSchema = juniper::RootNode<
-    'static,
-    PublicQuery,
-    PublicMutation,
-    juniper::EmptySubscription<Context>
->;
-
-pub fn create_public_schema() -> PublicSchema {
-    PublicSchema::new(PublicQuery, PublicMutation, juniper::EmptySubscription::new())
 }

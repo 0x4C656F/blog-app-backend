@@ -44,14 +44,3 @@ impl ProtectedMutation {
         BlogsService::publish_blog(blog_id, context).await
     }
 }
-
-pub type ProtectedSchema = juniper::RootNode<
-    'static,
-    ProtectedQuery,
-    ProtectedMutation,
-    juniper::EmptySubscription<Context>
->;
-
-pub fn create_protected_schema() -> ProtectedSchema {
-    ProtectedSchema::new(ProtectedQuery, ProtectedMutation, juniper::EmptySubscription::new())
-}

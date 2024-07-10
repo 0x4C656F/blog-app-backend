@@ -22,7 +22,10 @@ impl Query {
         PublicQuery
     }
 
-    fn protected() -> FieldResult<ProtectedQuery> {
+    fn protected(context: &Context) -> FieldResult<ProtectedQuery> {
+        if context.user_id.is_none() {
+            return Err("Unauthorized".into());
+        }
         Ok(ProtectedQuery)
     }
 }
@@ -34,13 +37,16 @@ impl Mutation {
         PublicMutation
     }
 
-    fn protected() -> FieldResult<ProtectedMutation> {
+    fn protected(context: &Context) -> FieldResult<ProtectedMutation> {
+        if context.user_id.is_none() {
+            return Err("Unauthorized".into());
+        }
         Ok(ProtectedMutation)
     }
 }
 
-// pub type Schema = juniper::RootNode<'static, Query, Mutation, EmptySubscription<Context>>;
+pub type Schema = juniper::RootNode<'static, Query, Mutation, EmptySubscription<Context>>;
 
-// pub fn create_schema() -> Schema {
-//     Schema::new(Query, Mutation, EmptySubscription::new())
-// }
+pub fn create_schema() -> Schema {
+    Schema::new(Query, Mutation, EmptySubscription::new())
+}
