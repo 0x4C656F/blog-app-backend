@@ -1,11 +1,3 @@
-use actix_web::middleware::Logger;
-use actix_web::web::Data;
-use actix_web::{App, HttpServer};
-use db::establish_connection;
-use dotenvy::dotenv;
-use graphql::Context;
-use handlers::register;
-use std::io;
 mod db;
 mod error;
 mod graphql;
@@ -14,23 +6,22 @@ mod graphql_public;
 mod handlers;
 mod services;
 #[actix_web::main]
-async fn main() -> Result<(), io::Error> {
-    let connection = establish_connection().await.unwrap();
-    dotenv().ok();
-    let context = Context {
+async fn main() -> Result<(), std::io::Error> {
+    let connection = db::establish_connection().await.unwrap();
+    dotenvy::dotenv().ok();
+    let context = graphql::Context {
         db: connection.to_owned(),
         user_id: None,
     };
-
-    HttpServer::new(move || {
-        let cors = actix_cors::Cors::permissive();
-        App::new()
-            .wrap(Logger::default())
-            .wrap(cors)
-            .app_data(Data::new(context.clone()))
-            .configure(register)
-    })
-    .bind(("127.0.0.1", 8080))?
-    .run()
-    .await
+    actix_web::HttpServer
+        ::new(move || {
+            let cors = actix_cors::Cors::permissive();
+            actix_web::App
+                ::new()
+                .wrap(cors)
+                .app_data(actix_web::web::Data::new(context.clone()))
+                .configure(handlers::register)
+        })
+        .bind(("127.0.0.1", 8080))?
+        .run().await
 }

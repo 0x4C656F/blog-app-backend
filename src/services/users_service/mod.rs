@@ -9,7 +9,7 @@ pub struct User {
     pub password: String,
     pub created_at: chrono::NaiveDateTime,
 }
-#[derive(juniper::GraphQLInputObject,Clone)]
+#[derive(juniper::GraphQLInputObject,Clone, Debug)]
 pub struct CreateUserDto {
     pub email: String,
     pub password: String,

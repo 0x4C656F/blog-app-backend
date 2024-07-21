@@ -12,7 +12,7 @@ pub struct Blog {
     pub updated_at: chrono::NaiveDateTime,
 }
 
-#[derive(juniper::GraphQLInputObject)]
+#[derive(juniper::GraphQLInputObject, Debug)]
 pub struct CreateBlogDto {
     pub title: String,
     pub content: String,

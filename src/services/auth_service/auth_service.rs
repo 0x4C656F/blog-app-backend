@@ -5,15 +5,15 @@ use jsonwebtoken::{ get_current_timestamp, EncodingKey, Header };
 use juniper::FieldError;
 use std::env::var;
 
-use super::{ LoginDto, RegisterDto, TokenPair };
+use super::{ SignInDto, SignUpDto, TokenPair };
 
 pub trait IAuthService {
     async fn login(
-        login_dto: LoginDto,
+        login_dto: SignInDto,
         context: &Context
     ) -> juniper::FieldResult<super::TokenPair>;
     async fn register(
-        register_dto: RegisterDto,
+        register_dto: SignUpDto,
         context: &Context
     ) -> juniper::FieldResult<super::TokenPair>;
     async fn refresh_token(
@@ -26,25 +26,29 @@ pub struct AuthService {}
 
 impl IAuthService for AuthService {
     async fn login(
-        login_dto: LoginDto,
+        login_dto: SignInDto,
         context: &Context
     ) -> juniper::FieldResult<super::TokenPair> {
-        let LoginDto { password, email } = login_dto;
+
+        let SignInDto { password, email } = login_dto;
 
         let found_user = UsersService::find_by_email(email, context).await?;
-
-        if bcrypt::verify(password, &found_user.password).unwrap() {
+        let is_correct = bcrypt::verify(password, &found_user.password).unwrap();
+        if !is_correct {
+            println!("User logged in with wrong password");
             return Err(FieldError::new("Incorrect email or password", juniper::Value::Null));
         }
+
         AuthService::generate_token_pair(
             found_user.id.expect("User without id, wait what?")
         ).await.to_field_error("Could not generate token pair")
     }
     async fn register(
-        register_dto: RegisterDto,
+        register_dto: SignUpDto,
         context: &Context
     ) -> juniper::FieldResult<super::TokenPair> {
-        let RegisterDto { email, password } = register_dto;
+
+        let SignUpDto { email, password } = register_dto;
 
         let user_exists = UsersService::find_by_email(email.clone(), context).await.is_ok();
         if user_exists {
@@ -53,7 +57,10 @@ impl IAuthService for AuthService {
             );
         }
 
-        let dto = CreateUserDto { email, password };
+        let hashed_password = bcrypt::hash(password, 10).unwrap();
+
+        let dto = CreateUserDto { email, password:hashed_password };
+
         let user = UsersService::create_user(dto, context).await?;
 
         AuthService::generate_token_pair(user.id.unwrap()).await.to_field_error(

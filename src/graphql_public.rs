@@ -2,7 +2,7 @@ use juniper::{ graphql_object, FieldResult, GraphQLObject };
 
 use crate::{
     graphql::Context,
-    services::auth_service::{ AuthService, IAuthService, LoginDto, RegisterDto, TokenPair },
+    services::auth_service::{ AuthService, IAuthService, SignInDto, SignUpDto, TokenPair },
 };
 
 #[derive(GraphQLObject)]
@@ -21,10 +21,13 @@ impl PublicQuery {
 }
 #[graphql_object(context = Context)]
 impl PublicMutation {
-    async fn login(login_dto: LoginDto, context: &Context) -> FieldResult<TokenPair> {
-        AuthService::login(login_dto, context).await
+    async fn sign_in(sign_in_dto: SignInDto, context: &Context) -> FieldResult<TokenPair> {
+        println!("[{:?}] AuthService /sign_in with dto: {:?}", chrono::Utc::now(), &sign_in_dto);
+        AuthService::login(sign_in_dto, context).await
     }
-    async fn register(register_dto: RegisterDto, context: &Context) -> FieldResult<TokenPair> {
-        AuthService::register(register_dto, context).await
+    async fn sign_up(sign_up_dto: SignUpDto, context: &Context) -> FieldResult<TokenPair> {
+        println!("[{:?}] AuthService /sign_up with dto: {:?}", chrono::Utc::now(), &sign_up_dto);
+
+        AuthService::register(sign_up_dto, context).await
     }
 }

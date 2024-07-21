@@ -6,14 +6,14 @@ pub struct TokenPair {
     pub refresh_token: String,
 }
 
-#[derive(juniper::GraphQLInputObject)]
-pub struct LoginDto {
+#[derive(juniper::GraphQLInputObject, Debug)]
+pub struct SignInDto {
     pub email: String,
     pub password: String,
 }
 
-#[derive(juniper::GraphQLInputObject)]
-pub struct RegisterDto {
+#[derive(juniper::GraphQLInputObject, Debug)]
+pub struct SignUpDto {
     pub email: String,
     pub password: String,
 }

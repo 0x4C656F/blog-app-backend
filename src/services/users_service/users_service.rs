@@ -34,15 +34,26 @@ impl IUsersService for UsersService {
 
     async fn create_user(create_user_dto: CreateUserDto, context: &Context) -> FieldResult<User> {
         let CreateUserDto { email, password } = create_user_dto;
+
+        let full_name = email.split('@').next().unwrap();
+
+        let formated_name = full_name
+            .split('.').map(|s| {
+                let mut c = s.chars();
+                match c.next() {
+                    None => String::new(),
+                    Some(f) => f.to_uppercase().chain(c).collect::<String>()
+                }
+            }).collect::<Vec<String>>().join(" ");
+
         let user = User {
             id: None,
-            name: "name".to_string(),
+            name: formated_name,
             email,
             password,
             created_at: chrono::Utc::now().naive_utc(),
         };
-        println!("{:?}", user);
-        let a = sqlx
+        sqlx
             ::query_as::<_, User>(
                 "INSERT INTO users (name, email, password, created_at) VALUES ($1, $2, $3, $4) RETURNING *"
             )
@@ -51,8 +62,6 @@ impl IUsersService for UsersService {
             .bind(&user.password)
             .bind(&user.created_at)
             .fetch_one(&context.db).await
-            .to_field_error("Failed to create user");
-        println!("{:?}", a);
-        a
+            .to_field_error("Failed to create user")
     }
 }
